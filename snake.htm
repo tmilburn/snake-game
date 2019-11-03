@@ -87,19 +87,53 @@ snakeY[3] = 6
 snakeY[4] = 6
 snakeY[5] = 6
 
+var bitmap = new Uint8Array(new ArrayBuffer(23*13));
+var emptyCells = 23*13;
+
+function getBitmap(x, y)
+{
+    return bitmap[(y * 23) + x];
+}
+function setBitmap(variable, x, y)
+{
+    bitmap[(y * 23) + x] = variable;
+}
+
+
 for(var i = tailIndex; i <= headIndex; i++)
 {
     drawGrid(snakePattern, snakeX[i], snakeY[i]);
+    emptyCells--;
+    setBitmap(1, snakeX[i], snakeY[i]);
 }
 
-var foodX = Math.floor(Math.random() * 23);
-var foodY = Math.floor(Math.random() * 13);
-drawGrid(foodPattern, foodX, foodY);
+var foodX;
+var foodY;
 
+function setFood()
+{
+    var searchNum = Math.floor(Math.random() * emptyCells);
+    var i = 0;
+    while(searchNum--)
+    {
+        i++;
+        while(bitmap[i] == 1)
+        {
+            i++;
+        }
+    }
+    foodX = i % 23;
+    foodY = Math.floor(i / 23);
+    drawGrid(foodPattern, foodX, foodY);
+    setBitmap(1, foodX, foodY);
+    emptyCells--;
+}
+
+setFood();
 mainLoop();
-
 function mainLoop()
 {
+    var keepRunning = true;
     var newHeadIndex = (headIndex + 1) % 300;
     // Get any new direction
     if(lastPressedKey == 'DOWN' && direction != 'UP')
@@ -148,21 +182,36 @@ function mainLoop()
         }
         snakeY[newHeadIndex] = snakeY[headIndex];
     }
-    drawGrid(snakePattern, snakeX[newHeadIndex], snakeY[newHeadIndex]);
-    drawGrid(emptyPattern, snakeX[tailIndex], snakeY[tailIndex]);
+    setBitmap(0, snakeX[tailIndex], snakeY[tailIndex]);
+    var oldTailIndex = tailIndex;
     headIndex = newHeadIndex;
-    if(foodX == snakeX[newHeadIndex] && foodY == snakeY[newHeadIndex])
+    if(snakeX[newHeadIndex] == foodX && snakeY[newHeadIndex] == foodY)
     {
-        foodX = Math.floor(Math.random() * 23);
-        foodY = Math.floor(Math.random() * 13);
-        drawGrid(foodPattern, foodX, foodY); 
+        setBitmap(1, snakeX[newHeadIndex], snakeY[newHeadIndex]);
+        setFood();
+    }
+    else if(getBitmap(snakeX[newHeadIndex], snakeY[newHeadIndex]) != 0)
+    {
+        gameOver();
+        keepRunning = false;
     }
     else
     {
+        setBitmap(1, snakeX[newHeadIndex], snakeY[newHeadIndex]);
         tailIndex = (tailIndex + 1) % 300;
     }
-    setTimeout(mainLoop, 200);
-};
+    if(keepRunning)
+    {
+        drawGrid(emptyPattern, snakeX[oldTailIndex], snakeY[oldTailIndex]);
+        drawGrid(snakePattern, snakeX[newHeadIndex], snakeY[newHeadIndex]);
+        setTimeout(mainLoop, 200);
+    }
+}
+
+function gameOver()
+{
+    alert("Game Over");
+}
 </script>
 
 </body>

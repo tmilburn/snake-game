@@ -11,23 +11,62 @@ var canvas = document.getElementById("snakeCanvas");
 var ctx = canvas.getContext("2d");
 ctx.scale(4, 4);
 ctx.fillStyle = "#222";
-ctx.strokeStyle = "#222";
-ctx.beginPath();
-ctx.rect(1, 10, 94, 54);
-ctx.stroke();
-const snakePattern = " ###"
-                  + "# ##"
-                  + "## #"
-                  + "### ";
+ctx.fillRect(0, 9, 96, 56);
+ctx.fillStyle = "#fff";
+ctx.fillRect(1, 10, 94, 54);
+const bodyPattern = "    "
+                   + "## #"
+                   + "# ##"
+                   + "    ";
+                   
 const emptyPattern = "    "
                    + "    "
                    + "    "
                    + "    ";
+                   
 const foodPattern = " #  "
                   + "# # "
                   + " #  "
                   + "    ";
-function drawGrid(pattern, x, y)
+                  
+const headPattern = "#   "
+                  + " ## "
+                  + "### "
+                  + "    ";
+                  
+const eatingPattern = "# # "
+                    + " #  "
+                    + "##  "
+                    + "  # ";
+                    
+const cornerPattern = " ## "
+                    + "# # "
+                    + "##  "
+                    + "    ";
+const cornerPattern2 = "    "
+                     + "##  "
+                     + "# # "
+                     + " ## ";
+                    
+const cornerEatenPattern = "### "
+                         + "# # "
+                         + "##  "
+                         + "    ";
+const cornerEatenPattern2 = "    "
+                          + "##  "
+                          + "# # "
+                          + "### ";
+                  
+const eatenPattern = " ## "
+                   + "## #"
+                   + "# ##"
+                   + " ## ";
+
+const tailPattern = "    "
+                  + "  ##"
+                  + "####"
+                  + "    ";
+function drawGrid(pattern, x, y, direction)
 {
     // Clear the square
     ctx.fillStyle = "#fff";
@@ -40,7 +79,20 @@ function drawGrid(pattern, x, y)
         var c = pattern.charAt(i);
         if(c == "#")
         {
-            ctx.fillRect(2 + (x*4) + (i%4), 11 + (y*4) + Math.floor(i/4), 1, 1);
+            switch(direction){
+            case 0:
+                ctx.fillRect(2 + (x*4) + (i%4), 11 + (y*4) + Math.floor(i/4), 1, 1);
+                break;
+            case 1:
+                ctx.fillRect(2 + (x*4) + Math.floor(i/4), 11 + (y*4) + (i%4), 1, 1);
+                break;
+            case 2:
+                ctx.fillRect(2 + (x*4) + (3 - (i%4)), 11 + (y*4) + Math.floor(i/4), 1, 1);
+                break;
+            case 3:
+                ctx.fillRect(2 + (x*4) + Math.floor(i/4), 11 + (y*4) + (3 - (i%4)), 1, 1);
+                break;
+            }
         }
     }
 }
@@ -66,12 +118,14 @@ document.addEventListener('keydown', function(event) {
 });
 
 var direction = "RIGHT";
+var lastDirection = "RIGHT";
 
 var tailIndex = 0;
 var headIndex = 5;
 
 var snakeX = new Uint8Array(new ArrayBuffer(300));
 var snakeY = new Uint8Array(new ArrayBuffer(300));
+var snakeDir = new Uint8Array(new ArrayBuffer(300));
 
 snakeX[0] = 5
 snakeX[1] = 6
@@ -99,16 +153,22 @@ function setBitmap(variable, x, y)
     bitmap[(y * 23) + x] = variable;
 }
 
-
-for(var i = tailIndex; i <= headIndex; i++)
+drawTail(0, snakeX[tailIndex], snakeY[tailIndex]);
+emptyCells--;
+setBitmap(1, snakeX[tailIndex], snakeY[tailIndex]);
+for(var i = tailIndex+1; i < headIndex; i++)
 {
-    drawGrid(snakePattern, snakeX[i], snakeY[i]);
+    drawBody(0, snakeX[i], snakeY[i], false, 0);
     emptyCells--;
     setBitmap(1, snakeX[i], snakeY[i]);
 }
+drawHead(0, snakeX[headIndex], snakeY[headIndex]);
+emptyCells--;
+setBitmap(1, snakeX[headIndex], snakeY[headIndex]);
 
 var foodX;
 var foodY;
+var ateFood = false;
 
 function setFood()
 {
@@ -124,8 +184,8 @@ function setFood()
     }
     foodX = i % 23;
     foodY = Math.floor(i / 23);
-    drawGrid(foodPattern, foodX, foodY);
-    setBitmap(1, foodX, foodY);
+    drawGrid(foodPattern, foodX, foodY, 0);
+    setBitmap(1, foodX, foodY, 0);
     emptyCells--;
 }
 
@@ -158,6 +218,7 @@ function mainLoop()
     {
         snakeY[newHeadIndex] = (snakeY[headIndex] + 1) % 13;
         snakeX[newHeadIndex] = snakeX[headIndex];
+        snakeDir[newHeadIndex] = 1;
     }
     else if(direction == 'UP')
     {
@@ -167,11 +228,13 @@ function mainLoop()
             snakeY[newHeadIndex] += 13;
         }
         snakeX[newHeadIndex] = snakeX[headIndex];
+        snakeDir[newHeadIndex] = 3;
     }
     else if(direction == 'RIGHT')
     {
         snakeX[newHeadIndex] = (snakeX[headIndex] + 1) % 23;
         snakeY[newHeadIndex] = snakeY[headIndex];
+        snakeDir[newHeadIndex] = 0;
     }
     else if(direction == 'LEFT')
     {
@@ -181,14 +244,17 @@ function mainLoop()
             snakeX[newHeadIndex] += 23;
         }
         snakeY[newHeadIndex] = snakeY[headIndex];
+        snakeDir[newHeadIndex] = 2;
     }
+    
     setBitmap(0, snakeX[tailIndex], snakeY[tailIndex]);
     var oldTailIndex = tailIndex;
-    headIndex = newHeadIndex;
+    var oldAteFood = ateFood;
     if(snakeX[newHeadIndex] == foodX && snakeY[newHeadIndex] == foodY)
     {
         setBitmap(1, snakeX[newHeadIndex], snakeY[newHeadIndex]);
         setFood();
+        ateFood = true;
     }
     else if(getBitmap(snakeX[newHeadIndex], snakeY[newHeadIndex]) != 0)
     {
@@ -197,13 +263,18 @@ function mainLoop()
     }
     else
     {
+        ateFood = false;
         setBitmap(1, snakeX[newHeadIndex], snakeY[newHeadIndex]);
         tailIndex = (tailIndex + 1) % 300;
     }
     if(keepRunning)
     {
         drawGrid(emptyPattern, snakeX[oldTailIndex], snakeY[oldTailIndex]);
-        drawGrid(snakePattern, snakeX[newHeadIndex], snakeY[newHeadIndex]);
+        drawTail(snakeDir[tailIndex], snakeX[tailIndex], snakeY[tailIndex]);
+        drawBody(snakeDir[headIndex], snakeX[headIndex], snakeY[headIndex], oldAteFood, snakeDir[newHeadIndex]);
+        drawHead(snakeDir[newHeadIndex], snakeX[newHeadIndex], snakeY[newHeadIndex]);
+        snakeDir[headIndex] = snakeDir[newHeadIndex];
+        headIndex = newHeadIndex;
         setTimeout(mainLoop, 200);
     }
 }
@@ -211,6 +282,47 @@ function mainLoop()
 function gameOver()
 {
     alert("Game Over");
+}
+function drawHead(direction, x, y)
+{
+    drawGrid(headPattern, x, y, direction);
+}
+function drawBody(direction, x, y, ateFood, headDirection)
+{
+    if(ateFood)
+    {
+        if(direction == headDirection)
+        {
+            drawGrid(eatenPattern, x, y, direction);
+        }
+        else if(headDirection < 2)
+        {
+            drawGrid(cornerEatenPattern2, x, y, direction);
+        }
+        else
+        {
+            drawGrid(cornerEatenPattern, x, y, direction);
+        }
+    }
+    else
+    {
+        if(direction == headDirection)
+        {
+            drawGrid(bodyPattern, x, y, direction);
+        }
+        else if(headDirection < 2)
+        {
+            drawGrid(cornerPattern2, x, y, direction);
+        }
+        else
+        {
+            drawGrid(cornerPattern, x, y, direction);
+        }
+    }
+}
+function drawTail(direction, x, y)
+{
+    drawGrid(tailPattern, x, y, direction);
 }
 </script>
 

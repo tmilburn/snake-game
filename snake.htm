@@ -23,6 +23,10 @@ const emptyPattern = "    "
                    + "    "
                    + "    "
                    + "    ";
+const foodPattern = " #  "
+                  + "# # "
+                  + " #  "
+                  + "    ";
 function drawGrid(pattern, x, y)
 {
     // Clear the square
@@ -88,6 +92,10 @@ for(var i = tailIndex; i <= headIndex; i++)
     drawGrid(snakePattern, snakeX[i], snakeY[i]);
 }
 
+var foodX = Math.floor(Math.random() * 23);
+var foodY = Math.floor(Math.random() * 13);
+drawGrid(foodPattern, foodX, foodY);
+
 mainLoop();
 
 function mainLoop()
@@ -143,7 +151,16 @@ function mainLoop()
     drawGrid(snakePattern, snakeX[newHeadIndex], snakeY[newHeadIndex]);
     drawGrid(emptyPattern, snakeX[tailIndex], snakeY[tailIndex]);
     headIndex = newHeadIndex;
-    tailIndex = (tailIndex + 1) % 300;
+    if(foodX == snakeX[newHeadIndex] && foodY == snakeY[newHeadIndex])
+    {
+        foodX = Math.floor(Math.random() * 23);
+        foodY = Math.floor(Math.random() * 13);
+        drawGrid(foodPattern, foodX, foodY); 
+    }
+    else
+    {
+        tailIndex = (tailIndex + 1) % 300;
+    }
     setTimeout(mainLoop, 200);
 };
 </script>

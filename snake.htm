@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<canvas id="snakeCanvas" width="384" height="260"
+style="border:1px solid #c3c3c3;"></canvas>
+
+<script>
+
+var canvas = document.getElementById("snakeCanvas");
+var ctx = canvas.getContext("2d");
+ctx.scale(4, 4);
+ctx.fillStyle = "#222";
+ctx.strokeStyle = "#222";
+ctx.beginPath();
+ctx.rect(1, 10, 94, 54);
+ctx.stroke();
+var gridPattern = "    "
+                + " ## "
+                + " ## "
+                + "    "
+for (var x = 0; x < 23; x++)
+{
+    for (var y = 0; y < 13; y++)
+    {
+        drawGrid(gridPattern, x, y);
+    }
+}           
+                
+function drawGrid(pattern, x, y)
+{
+    // Clear the square
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(2 + (x*4), 11 + (y*4), 4, 4);
+    
+    // Print the pattern
+    ctx.fillStyle = "#222";
+    for (var i = 0; i < pattern.length; i++)
+    {
+        var c = pattern.charAt(i);
+        if(c == "#")
+        {
+            ctx.fillRect(2 + (x*4) + (i%4), 11 + (y*4) + Math.floor(i/4), 1, 1);
+        }
+    }
+}
+
+</script>
+
+</body>
+</html>

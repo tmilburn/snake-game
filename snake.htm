@@ -15,18 +15,10 @@ ctx.strokeStyle = "#222";
 ctx.beginPath();
 ctx.rect(1, 10, 94, 54);
 ctx.stroke();
-var gridPattern = "    "
-                + " ## "
-                + " ## "
-                + "    "
-for (var x = 0; x < 23; x++)
-{
-    for (var y = 0; y < 13; y++)
-    {
-        drawGrid(gridPattern, x, y);
-    }
-}           
-                
+const gridPattern = "    "
+                  + " ## "
+                  + " ## "
+                  + "    ";                         
 function drawGrid(pattern, x, y)
 {
     // Clear the square
@@ -45,6 +37,61 @@ function drawGrid(pattern, x, y)
     }
 }
 
+var lastPressedKey = "";
+
+document.addEventListener('keydown', function(event) {
+    var code = event.keyCode;
+    switch(code) {
+    case 37:
+        lastPressedKey = 'LEFT';
+        break;
+    case 38:
+        lastPressedKey = 'UP';
+        break;
+    case 39:
+        lastPressedKey = 'RIGHT';
+        break;
+    case 40:
+        lastPressedKey = 'DOWN';
+        break;
+    }
+});
+
+var playerX = 0;
+var playerY = 0;
+
+mainLoop();
+
+function mainLoop()
+{
+    if(lastPressedKey == 'DOWN')
+    {
+        playerY = (playerY + 1) % 13;
+    }
+    else if(lastPressedKey == 'UP')
+    {
+        playerY--;
+        if(playerY == -1)
+        {
+            playerY += 13;
+        }
+    }
+    else if(lastPressedKey == 'RIGHT')
+    {
+        playerX = (playerX + 1) % 23;
+    }
+    else if(lastPressedKey == 'LEFT')
+    {
+        playerX--;
+        if(playerX == -1)
+        {
+          playerX += 23;
+        }
+    }
+    lastPressedKey = "";
+    drawGrid(gridPattern, playerX, playerY);
+    setTimeout(mainLoop, 100);
+};
 </script>
 
 </body>

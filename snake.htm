@@ -15,10 +15,14 @@ ctx.strokeStyle = "#222";
 ctx.beginPath();
 ctx.rect(1, 10, 94, 54);
 ctx.stroke();
-const gridPattern = "    "
-                  + " ## "
-                  + " ## "
-                  + "    ";                         
+const snakePattern = " ###"
+                  + "# ##"
+                  + "## #"
+                  + "### ";
+const emptyPattern = "    "
+                   + "    "
+                   + "    "
+                   + "    ";
 function drawGrid(pattern, x, y)
 {
     // Clear the square
@@ -57,40 +61,90 @@ document.addEventListener('keydown', function(event) {
     }
 });
 
-var playerX = 0;
-var playerY = 0;
+var direction = "RIGHT";
+
+var tailIndex = 0;
+var headIndex = 5;
+
+var snakeX = new Uint8Array(new ArrayBuffer(300));
+var snakeY = new Uint8Array(new ArrayBuffer(300));
+
+snakeX[0] = 5
+snakeX[1] = 6
+snakeX[2] = 7
+snakeX[3] = 8
+snakeX[4] = 9
+snakeX[5] = 10
+
+snakeY[0] = 6
+snakeY[1] = 6
+snakeY[2] = 6
+snakeY[3] = 6
+snakeY[4] = 6
+snakeY[5] = 6
+
+for(var i = tailIndex; i <= headIndex; i++)
+{
+    drawGrid(snakePattern, snakeX[i], snakeY[i]);
+}
 
 mainLoop();
 
 function mainLoop()
 {
-    if(lastPressedKey == 'DOWN')
+    var newHeadIndex = (headIndex + 1) % 300;
+    // Get any new direction
+    if(lastPressedKey == 'DOWN' && direction != 'UP')
     {
-        playerY = (playerY + 1) % 13;
+        direction = 'DOWN';
     }
-    else if(lastPressedKey == 'UP')
+    else if(lastPressedKey == 'UP' && direction != 'DOWN')
     {
-        playerY--;
-        if(playerY == -1)
-        {
-            playerY += 13;
-        }
+        direction = 'UP';
     }
-    else if(lastPressedKey == 'RIGHT')
+    else if(lastPressedKey == 'RIGHT' && direction != 'LEFT')
     {
-        playerX = (playerX + 1) % 23;
+        direction = 'RIGHT';
     }
-    else if(lastPressedKey == 'LEFT')
+    else if(lastPressedKey == 'LEFT' && direction != 'RIGHT')
     {
-        playerX--;
-        if(playerX == -1)
-        {
-          playerX += 23;
-        }
+        direction = 'LEFT';
     }
     lastPressedKey = "";
-    drawGrid(gridPattern, playerX, playerY);
-    setTimeout(mainLoop, 100);
+    
+    if(direction == 'DOWN')
+    {
+        snakeY[newHeadIndex] = (snakeY[headIndex] + 1) % 13;
+        snakeX[newHeadIndex] = snakeX[headIndex];
+    }
+    else if(direction == 'UP')
+    {
+        snakeY[newHeadIndex] = snakeY[headIndex] - 1;
+        if(snakeY[newHeadIndex] == 255)
+        {
+            snakeY[newHeadIndex] += 13;
+        }
+        snakeX[newHeadIndex] = snakeX[headIndex];
+    }
+    else if(direction == 'RIGHT')
+    {
+        snakeX[newHeadIndex] = (snakeX[headIndex] + 1) % 23;
+        snakeY[newHeadIndex] = snakeY[headIndex];
+    }
+    else if(direction == 'LEFT')
+    {
+        snakeX[newHeadIndex] = snakeX[headIndex] - 1;
+        if(snakeX[newHeadIndex] == 255)
+        {
+            snakeX[newHeadIndex] += 23;
+        }
+        snakeY[newHeadIndex] = snakeY[headIndex];
+    }
+    drawGrid(snakePattern, snakeX[newHeadIndex], snakeY[newHeadIndex]);
+    drawGrid(emptyPattern, snakeX[tailIndex], snakeY[tailIndex]);
+    headIndex = newHeadIndex;
+    tailIndex = (tailIndex + 1) % 300;
+    setTimeout(mainLoop, 200);
 };
 </script>
 

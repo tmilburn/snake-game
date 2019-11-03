@@ -2,18 +2,14 @@
 <html>
 <body>
 
-<canvas id="snakeCanvas" width="384" height="260"
-style="border:1px solid #c3c3c3;"></canvas>
+<canvas id="snakeCanvas" width="384" height="260"></canvas>
 
 <script>
 
 var canvas = document.getElementById("snakeCanvas");
 var ctx = canvas.getContext("2d");
 ctx.scale(4, 4);
-ctx.fillStyle = "#222";
-ctx.fillRect(0, 9, 96, 56);
-ctx.fillStyle = "#fff";
-ctx.fillRect(1, 10, 94, 54);
+
 const bodyPattern = "    "
                    + "## #"
                    + "# ##"
@@ -66,6 +62,104 @@ const tailPattern = "    "
                   + "  ##"
                   + "####"
                   + "    ";
+                  
+const digits = [
+  "###"
++ "# #"
++ "# #"
++ "# #"
++ "###",
+
+  " # "
++ "## "
++ " # "
++ " # "
++ " # ",
+
+  "###"
++ "  #"
++ "###"
++ "#  "
++ "###",
+
+  "###"
++ "  #"
++ "###"
++ "  #"
++ "###",
+
+  "# #"
++ "# #"
++ "###"
++ "  #"
++ "  #",
+
+  "###"
++ "#  "
++ "###"
++ "  #"
++ "###",
+
+  "###"
++ "#  "
++ "###"
++ "# #"
++ "###",
+
+  "###"
++ "  #"
++ " # "
++ " # "
++ " # ",
+
+  "###"
++ "# #"
++ "###"
++ "# #"
++ "###",
+
+  "###"
++ "# #"
++ "###"
++ "  #"
++ "###"
+];
+
+const bigGameOver = " ########   ########   ##### #####   ########    ########  ###    ###  ######## ######### "
+                  + "########## ########## ############# #########   ########## ###    ### ######### ##########"
+                  + "###    ### ###    ### ############# ###         ###    ### ###    ### ###       ###    ###"
+                  + "###        ###    ### ###  ###  ### ###         ###    ### ###    ### ###       ###    ###"
+                  + "###  ##### ########## ###  ###  ### ########    ###    ### ###    ### ########  ######### "
+                  + "###  ##### ########## ###  ###  ### ########    ###    ### ###   #### ########  ######### "
+                  + "###    ### ###    ### ###  ###  ### ###         ###    ### #### ####  ###       ###    ###"
+                  + "###    ### ###    ### ###  ###  ### ###         ###    ###  #######   ###       ###    ###"
+                  + "########## ###    ### ###  ###  ### #########   ##########   #####    ######### ###    ###"
+                  + " ########  ###    ### ###  ###  ###  ########    ########     ###      ######## ###    ###"
+
+function drawScore(score)
+{
+     // Clear the score
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, 16, 5);
+    
+    //Print each digit
+    ctx.fillStyle = "#222";
+    for(var i = 0; i < 4; i++)
+    {
+    	var digit = Math.floor(score/Math.pow(10,3-i));
+    	score = score - (digit * Math.pow(10,3-i));
+        var pattern = digits[digit];
+        for (var j = 0; j < pattern.length; j++)
+        {
+            var c = pattern.charAt(j);
+            if(c == "#")
+            {
+                ctx.fillRect(1 + (i*4) + (j%3), Math.floor(j/3), 1, 1);
+            }
+        }
+    }
+}            
+             
 function drawGrid(pattern, x, y, direction)
 {
     // Clear the square
@@ -98,6 +192,7 @@ function drawGrid(pattern, x, y, direction)
 }
 
 var lastPressedKey = "";
+var waitingToStart = false;
 
 document.addEventListener('keydown', function(event) {
     var code = event.keyCode;
@@ -115,34 +210,21 @@ document.addEventListener('keydown', function(event) {
         lastPressedKey = 'DOWN';
         break;
     }
+    if(waitingToStart)
+    {
+        resetGame();
+    }
 });
 
-var direction = "RIGHT";
-var lastDirection = "RIGHT";
-
-var tailIndex = 0;
-var headIndex = 5;
-
-var snakeX = new Uint8Array(new ArrayBuffer(300));
-var snakeY = new Uint8Array(new ArrayBuffer(300));
-var snakeDir = new Uint8Array(new ArrayBuffer(300));
-
-snakeX[0] = 5
-snakeX[1] = 6
-snakeX[2] = 7
-snakeX[3] = 8
-snakeX[4] = 9
-snakeX[5] = 10
-
-snakeY[0] = 6
-snakeY[1] = 6
-snakeY[2] = 6
-snakeY[3] = 6
-snakeY[4] = 6
-snakeY[5] = 6
-
-var bitmap = new Uint8Array(new ArrayBuffer(23*13));
-var emptyCells = 23*13;
+var direction;
+var tailIndex;
+var headIndex;
+var snakeX;
+var snakeY;
+var snakeDir;
+var bitmap;
+var emptyCells;
+var flashes;
 
 function getBitmap(x, y)
 {
@@ -153,22 +235,9 @@ function setBitmap(variable, x, y)
     bitmap[(y * 23) + x] = variable;
 }
 
-drawTail(0, snakeX[tailIndex], snakeY[tailIndex]);
-emptyCells--;
-setBitmap(1, snakeX[tailIndex], snakeY[tailIndex]);
-for(var i = tailIndex+1; i < headIndex; i++)
-{
-    drawBody(0, snakeX[i], snakeY[i], false, 0);
-    emptyCells--;
-    setBitmap(1, snakeX[i], snakeY[i]);
-}
-drawHead(0, snakeX[headIndex], snakeY[headIndex]);
-emptyCells--;
-setBitmap(1, snakeX[headIndex], snakeY[headIndex]);
-
 var foodX;
 var foodY;
-var ateFood = false;
+var ateFood;
 
 function setFood()
 {
@@ -189,8 +258,63 @@ function setFood()
     emptyCells--;
 }
 
-setFood();
-mainLoop();
+var score;
+resetGame();
+function resetGame()
+{
+    ctx.fillStyle = "#222";
+    ctx.fillRect(0, 9, 96, 56);
+    ctx.fillRect(0, 6, 96, 1);
+
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(1, 10, 94, 54);
+
+    direction = "RIGHT";
+
+    tailIndex = 0;
+    headIndex = 5;
+
+    snakeX = new Uint8Array(new ArrayBuffer(300));
+    snakeY = new Uint8Array(new ArrayBuffer(300));
+    snakeDir = new Uint8Array(new ArrayBuffer(300));
+
+    flashes = 8;
+    waitingToStart = false;
+
+    bitmap = new Uint8Array(new ArrayBuffer(23*13));
+    emptyCells = 23*13;
+    lastPressedKey = "";
+    snakeX[0] = 5
+    snakeX[1] = 6
+    snakeX[2] = 7
+    snakeX[3] = 8
+    snakeX[4] = 9
+    snakeX[5] = 10
+
+    snakeY[0] = 6
+    snakeY[1] = 6
+    snakeY[2] = 6
+    snakeY[3] = 6
+    snakeY[4] = 6
+    snakeY[5] = 6
+    drawTail(0, snakeX[tailIndex], snakeY[tailIndex]);
+    emptyCells--;
+    setBitmap(1, snakeX[tailIndex], snakeY[tailIndex]);
+    for(var i = tailIndex+1; i < headIndex; i++)
+    {
+        drawBody(0, snakeX[i], snakeY[i], false, 0);
+        emptyCells--;
+        setBitmap(1, snakeX[i], snakeY[i]);
+    }
+    drawHead(0, snakeX[headIndex], snakeY[headIndex]);
+    emptyCells--;
+    setBitmap(1, snakeX[headIndex], snakeY[headIndex]);
+    ateFood = false;
+    setFood();
+    score = 0;
+    drawScore(0);
+    mainLoop();
+}
 function mainLoop()
 {
     var keepRunning = true;
@@ -252,24 +376,27 @@ function mainLoop()
     var oldAteFood = ateFood;
     if(snakeX[newHeadIndex] == foodX && snakeY[newHeadIndex] == foodY)
     {
+        drawGrid(emptyPattern, snakeX[oldTailIndex], snakeY[oldTailIndex]);
         setBitmap(1, snakeX[newHeadIndex], snakeY[newHeadIndex]);
         setFood();
         ateFood = true;
+        score++;
+		drawScore(score);
     }
     else if(getBitmap(snakeX[newHeadIndex], snakeY[newHeadIndex]) != 0)
     {
-        gameOver();
+        endGame();
         keepRunning = false;
     }
     else
     {
+        drawGrid(emptyPattern, snakeX[oldTailIndex], snakeY[oldTailIndex]);
         ateFood = false;
         setBitmap(1, snakeX[newHeadIndex], snakeY[newHeadIndex]);
         tailIndex = (tailIndex + 1) % 300;
     }
     if(keepRunning)
     {
-        drawGrid(emptyPattern, snakeX[oldTailIndex], snakeY[oldTailIndex]);
         drawTail(snakeDir[tailIndex], snakeX[tailIndex], snakeY[tailIndex]);
         drawBody(snakeDir[headIndex], snakeX[headIndex], snakeY[headIndex], oldAteFood, snakeDir[newHeadIndex]);
         drawHead(snakeDir[newHeadIndex], snakeX[newHeadIndex], snakeY[newHeadIndex]);
@@ -278,14 +405,97 @@ function mainLoop()
         setTimeout(mainLoop, 200);
     }
 }
+function endGame()
+{
+    flashes--;
+    if(flashes % 2)
+    {
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, 16, 5);
+    }
+    else
+    {
+        drawScore(score);
+    }
+    
+    if(flashes > 0)
+    {
+        setTimeout(endGame, 500);
+    }
+    else
+    {
+        reduceScore();
+    }
+}
+
+function reduceScore()
+{
+    score--;
+    drawScore(score);
+    if(score == 0)
+    {
+        gameOver();
+    }
+    else
+    {
+        setTimeout(reduceScore, 100);
+    }
+}
 
 function gameOver()
 {
-    alert("Game Over");
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(2, 31, 92, 12);
+    
+    //Print game over
+    ctx.fillStyle = "#222";
+    for (var i = 0; i < bigGameOver.length; i++)
+    {
+        var c = bigGameOver.charAt(i);
+        if(c == "#")
+        {
+            ctx.fillRect(3 + i%90, 32 + Math.floor(i/90), 1, 1);
+        }
+    }
+    waitingToStart = true;
 }
 function drawHead(direction, x, y)
 {
-    drawGrid(headPattern, x, y, direction);
+	var eating = false;
+	switch(direction){
+    case 0:
+    	if(foodX == x+1 && y == foodY)
+        {
+        	eating = true;
+        }
+    	break;
+    case 1:
+    	if(foodX == x && y+1 == foodY)
+        {
+        	eating = true;
+        }
+    	break;
+    case 2:
+    	if(foodX == x-1 && y == foodY)
+        {
+        	eating = true;
+        }
+    	break;
+    case 3:
+    	if(foodX == x && y-1 == foodY)
+        {
+        	eating = true;
+        }
+    	break;
+    }
+    if(eating)
+    {
+    	drawGrid(eatingPattern, x, y, direction);
+    }
+    else
+    {
+    	drawGrid(headPattern, x, y, direction);
+    }
 }
 function drawBody(direction, x, y, ateFood, headDirection)
 {

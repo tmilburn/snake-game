@@ -1,8 +1,48 @@
 <!DOCTYPE html>
 <html>
+<head>
+<title>Snake II</title>
+<style>
+button
+{
+    width:100px;
+    height:100px;
+    border: none;
+    color:grey;
+    background:lightgrey;
+    position:absolute;
+    font-size:50px;
+}
+#up
+{
+    left:140px;
+    top:300px;
+}
+#left
+{
+    left:40px;
+    top:400px;
+}
+#right
+{
+    left:240px;
+    top:400px;
+}
+#down
+{
+    left:140px;
+    top:500px;
+}
+</style>
+</head>
 <body>
 
+
 <canvas id="snakeCanvas" width="384" height="260"></canvas>
+<button id ="up">↑</button>
+<button id="left">←</button>
+<button id="right">→</button>
+<button id="down">↓</button>
 
 <script>
 
@@ -196,6 +236,11 @@ var waitingToStart = false;
 
 document.addEventListener('keydown', function(event) {
     var code = event.keyCode;
+    buttonPress(code);
+});
+
+function buttonPress(code)
+{
     switch(code) {
     case 37:
         lastPressedKey = 'LEFT';
@@ -214,7 +259,13 @@ document.addEventListener('keydown', function(event) {
     {
         resetGame();
     }
-});
+}
+
+
+document.getElementById('up').onclick =  function() {buttonPress(38)};
+document.getElementById('left').onclick =  function() {buttonPress(37)};
+document.getElementById('right').onclick =  function() {buttonPress(39)};
+document.getElementById('down').onclick =  function() {buttonPress(40)};
 
 var direction;
 var tailIndex;
@@ -254,7 +305,7 @@ function setFood()
     foodX = i % 23;
     foodY = Math.floor(i / 23);
     drawGrid(foodPattern, foodX, foodY, 0);
-    setBitmap(1, foodX, foodY, 0);
+    setBitmap(1, foodX, foodY);
     emptyCells--;
 }
 

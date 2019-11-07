@@ -449,7 +449,7 @@ function mainLoop()
         drawHead(snakeDir[newHeadIndex], snakeX[newHeadIndex], snakeY[newHeadIndex]);
         snakeDir[headIndex] = snakeDir[newHeadIndex];
         headIndex = newHeadIndex;
-        setTimeout(mainLoop, 100);
+        setTimeout(mainLoop, 200);
     }
     // Check food
     if(snakeX[headIndex] == foodX && snakeY[headIndex] == foodY)

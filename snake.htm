@@ -311,7 +311,6 @@ function setFood()
     foodX = i % 23;
     foodY = Math.floor(i / 23);
     drawGrid(foodPattern, foodX, foodY, 0);
-    setBitmap(1, foodX, foodY);
     emptyCells--;
 }
 
@@ -427,39 +426,42 @@ function mainLoop()
         snakeY[newHeadIndex] = snakeY[headIndex];
         snakeDir[newHeadIndex] = 2;
     }
-    
-    setBitmap(0, snakeX[tailIndex], snakeY[tailIndex]);
+    // Check what will happen to tail piece
     var oldTailIndex = tailIndex;
-    var oldAteFood = ateFood;
-    if(snakeX[newHeadIndex] == foodX && snakeY[newHeadIndex] == foodY)
+    if(ateFood == false)
     {
-        drawGrid(emptyPattern, snakeX[oldTailIndex], snakeY[oldTailIndex]);
+        setBitmap(0, snakeX[tailIndex], snakeY[tailIndex]);
+        tailIndex = (tailIndex + 1) % 300;
+    }
+    // Check for collisions
+    if(getBitmap(snakeX[newHeadIndex], snakeY[newHeadIndex]) != 0)
+    {
+        endGame();
+        keepRunning = false;
+    }
+    // No collisions then render new snake
+    if(keepRunning)
+    {
         setBitmap(1, snakeX[newHeadIndex], snakeY[newHeadIndex]);
+        drawGrid(emptyPattern, snakeX[oldTailIndex], snakeY[oldTailIndex]);
+        drawTail(snakeDir[tailIndex], snakeX[tailIndex], snakeY[tailIndex]);
+        drawBody(snakeDir[headIndex], snakeX[headIndex], snakeY[headIndex], ateFood, snakeDir[newHeadIndex]);
+        drawHead(snakeDir[newHeadIndex], snakeX[newHeadIndex], snakeY[newHeadIndex]);
+        snakeDir[headIndex] = snakeDir[newHeadIndex];
+        headIndex = newHeadIndex;
+        setTimeout(mainLoop, 100);
+    }
+    // Check food
+    if(snakeX[headIndex] == foodX && snakeY[headIndex] == foodY)
+    {
         setFood();
         ateFood = true;
         score++;
 		drawScore(score);
     }
-    else if(getBitmap(snakeX[newHeadIndex], snakeY[newHeadIndex]) != 0)
-    {
-        endGame();
-        keepRunning = false;
-    }
     else
     {
-        drawGrid(emptyPattern, snakeX[oldTailIndex], snakeY[oldTailIndex]);
         ateFood = false;
-        setBitmap(1, snakeX[newHeadIndex], snakeY[newHeadIndex]);
-        tailIndex = (tailIndex + 1) % 300;
-    }
-    if(keepRunning)
-    {
-        drawTail(snakeDir[tailIndex], snakeX[tailIndex], snakeY[tailIndex]);
-        drawBody(snakeDir[headIndex], snakeX[headIndex], snakeY[headIndex], oldAteFood, snakeDir[newHeadIndex]);
-        drawHead(snakeDir[newHeadIndex], snakeX[newHeadIndex], snakeY[newHeadIndex]);
-        snakeDir[headIndex] = snakeDir[newHeadIndex];
-        headIndex = newHeadIndex;
-        setTimeout(mainLoop, 200);
     }
 }
 function endGame()
